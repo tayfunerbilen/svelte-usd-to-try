@@ -1,6 +1,6 @@
 <script>
     import Sparkline from "sparklines"
-    import items from "./data"
+    import items from "./yeni"
 
     let div
     let data = items.reverse()
@@ -10,7 +10,7 @@
     let clientX
 
     let options = {
-        minValue: 0,
+        minValue: 1,
         maxValue: 14,
         lineWidth: 0,
         dotRadius: 10,
@@ -32,42 +32,47 @@
             width: window.innerWidth + 18,
             height: window.innerHeight / 2,
         })
-    }
 
-    $: if (index !== null) {
-
-        current = data[index]
         canvas.draw(
-            data.slice(0, index + 1).reduce((acc, current) => {
+            data.reduce((acc, current) => {
                 return [...acc, parseFloat(current.now.replace(',', '.'))]
             }, [])
             // data.reduce((acc, current) => {
             //     return [...acc, acc.length <= index ? parseFloat(current.now.replace(',', '.')) : 0]
             // }, [])
         )
+    }
 
+    $: if (index !== null) {
+        current = data[index]
     }
 
     $: if (canvas) {
-        document.addEventListener('mousemove', e => {
+        function mousemove(e) {
             const percent = (e.clientX / (window.innerWidth - 1)) * 100
             const currentIndex = Math.ceil((percent * data.length) / 100)
             index = currentIndex > 0 ? currentIndex - 1 : 0
-            clientX = e.clientX + 'px'
-        })
-        document.addEventListener('touchmove', e => {
+            clientX = e.clientX
+        }
+
+        function touchmove(e) {
             const percent = (e.touches[0].clientX / (window.innerWidth - 1)) * 100
             const currentIndex = Math.ceil((percent * data.length) / 100)
             index = currentIndex > 0 ? currentIndex - 1 : 0
-            clientX = e.touches[0].clientX + 'px'
-        })
-        window.addEventListener('resize', e => {
+            clientX = e.touches[0].clientX
+        }
+
+        function resize() {
             canvas = new Sparkline(div, {
                 ...options,
                 width: window.innerWidth + 18,
                 height: window.innerHeight / 2,
             })
-        })
+        }
+
+        document.addEventListener('mousemove', mousemove)
+        document.addEventListener('touchmove', touchmove)
+        window.addEventListener('resize', resize)
     }
 
 </script>
@@ -75,7 +80,7 @@
 <div class="container">
 
     {#if clientX}
-        <div class="line" style={`--position: ${clientX}`}></div>
+        <div class="line" style={`--position: ${clientX}px`}></div>
     {/if}
 
     <div class="headline">
@@ -88,7 +93,7 @@
             <h1>{window.innerWidth < 800 ? 'Parmağını sürükle' : 'Farenizi oynatın'}!</h1>
         {/if}
     </div>
-    <div bind:this={div} class="sparkline"></div>
+    <div bind:this={div} style={`--width: ${clientX + 9}px`} class="sparkline"></div>
 </div>
 
 <style>
@@ -119,6 +124,8 @@
         position: relative;
         left: -9px;
         bottom: -9px;
+        overflow: hidden;
+        width: var(--width)
     }
 
     .headline {
@@ -141,10 +148,11 @@
         opacity: .7;
     }
 
-    @media(max-width: 700px) {
+    @media (max-width: 700px) {
         .headline h1 {
             font-size: 6vh;
         }
+
         .headline p {
             font-size: 2.5vh;
         }
